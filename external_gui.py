@@ -338,12 +338,12 @@ class App(customtkinter.CTk):
         title_lbl.bind("<B1-Motion>", self.do_move)
         
         # Pencere Kontrol Butonları
-        self.btn_close = customtkinter.CTkButton(self.title_bar, text="✕", width=40, width_font=15, 
+        self.btn_close = customtkinter.CTkButton(self.title_bar, text="✕", width=40, font=("Roboto", 15), 
                                                  fg_color="transparent", hover_color="#C0392B", 
                                                  command=self.close_app)
         self.btn_close.pack(side="right")
         
-        self.btn_min = customtkinter.CTkButton(self.title_bar, text="—", width=40, width_font=15, 
+        self.btn_min = customtkinter.CTkButton(self.title_bar, text="—", width=40, font=("Roboto", 15), 
                                                fg_color="transparent", hover_color="#333", 
                                                command=self.iconify)
         self.btn_min.pack(side="right")
