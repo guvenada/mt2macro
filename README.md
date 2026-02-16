@@ -4,73 +4,73 @@
 ![License](https://img.shields.io/badge/License-MIT-blue)
 ![Purpose](https://img.shields.io/badge/Purpose-Research%20Only-orange)
 
-An open-source, thread-safe desktop automation tool powered by computer vision. This project demonstrates how to build robust automation software using Python, OpenCV, and WinAPI.
+Bilgisayarlı görü (computer vision) destekli, açık kaynaklı bir masaüstü otomasyon aracı. Bu proje, Python, OpenCV ve WinAPI kullanarak nasıl sağlam otomasyon yazılımları (robust software) geliştirileceğini gösterir.
 
-## ⚠️ Important Disclaimer
+## ⚠️ Önemli Yasal Uyarı
 
-This software is for **EDUCATIONAL PURPOSES ONLY**. It is a generic tool designed to showcase:
-- Multithreaded GUI applications with `customtkinter`.
-- Real-time Screen Capture with `mss`.
-- Template Matching algorithms with `opencv`.
+Bu yazılım tamamen **EĞİTİM AMAÇLI** (educational purposes only) hazırlanmıştır. Aşağıdaki teknolojileri göstermek için tasarlanmıştır:
+- `customtkinter` ile modern arayüz tasarımı.
+- `mss` ile gerçek zamanlı ekran yakalama (real-time screen capture).
+- `opencv` ile şablon eşleştirme (template matching).
 
-**By using this software, you agree that:**
-1. You will use it only for personal research or offline testing.
-2. You will not use it to violate the Terms of Service of any third-party software.
-3. The authors assume no liability for misuse.
+**Bu yazılımı kullanarak şunları kabul etmiş sayılırsınız:**
+1. Sadece kişisel araştırma veya çevrimdışı testler (offline testing) için kullanacaksınız.
+2. Üçüncü taraf yazılımların Hizmet Koşullarını (ToS) ihlal etmeyeceksiniz.
+3. Yazarların yanlış kullanımdan (misuse) sorumlu olmadığını kabul edersiniz.
 
-See `EDUCATIONAL_CERTIFICATE.md` for full details.
+Detaylar için `EDUCATIONAL_CERTIFICATE.md` dosyasına bakabilirsiniz.
 
-## Features
+## Özellikler
 
-- **Stealth Design**: Randomizes window titles to mimic system processes.
-- **Modern GUI**: Professional dark-themed interface.
-- **Performance**: Optimized for minimal CPU usage (~1-2% on idle).
-- **Flexibility**: Works with any desktop application via image templates.
-- **Safety**: Includes timeouts and stuck detection logic.
+- **Gizlilik Odaklı (Stealth)**: Sistem süreçlerini taklit etmek için pencere başlığını rastgele değiştirir.
+- **Modern Arayüz (GUI)**: Göz yormayan koyu tema (dark mode).
+- **Performans**: İşlemciyi yormaz, arkada sessizce çalışır (~1-2% CPU).
+- **Esneklik**: Görsel şablonlar (templates) sayesinde her türlü masaüstü uygulamasında çalışır.
+- **Güvenlik**: Takılma durumlarını algılar ve zaman aşımı (timeout) koruması içerir.
 
-## Installation
+## Kurulum
 
-1.  **Clone the Repository**
+1.  **Projeyi İndirin**
     ```bash
     git clone https://github.com/guvenada/mt2macro.git
     cd mt2macro
     ```
 
-2.  **Install Requirements**
+2.  **Gerekli Kütüphaneleri Yükleyin**
     ```bash
     pip install -r requirements.txt
     ```
 
-## Usage
+## Kullanım
 
-1.  **Launch the Tool**
+1.  **Aracı Başlatın**
     ```bash
     python external_gui.py
     ```
 
-2.  **Setup Targets**
-    - Click **Capture Main** to select your primary interaction target.
-    - Click **Capture Sub** to select secondary targets (e.g., confirmation buttons, rare events).
-    - *Note: Images are saved locally as `target.png` and `elite1.png` etc.*
+2.  **Hedefleri Belirleyin (Setup)**
+    - **Capture Main**'e tıklayarak ana hedefin resmini alın.
+    - **Capture Sub**'a tıklayarak yan hedefleri (elitler, butonlar vb.) kaydedin.
+    - *Not: Resimler klasöre `target.png` ve `elite1.png` olarak kaydedilir.*
 
-3.  **Configure**
-    - Go to the **Properties** tab.
-    - Adjust **Threshold** (sensitivity, usually 0.55 - 0.75).
-    - Set **Action Delay** (speed of interaction).
+3.  **Ayarlar (Config)**
+    - **Properties** sekmesine gelin.
+    - **Threshold** (Hassasiyet): Genelde 0.55 - 0.75 arası iyidir.
+    - **Action Delay** (Hız): İşlem aralığını belirleyin.
 
-4.  **Start Service**
-    - Click **START SERVICE**. The bot will run in the background.
-    - **F12** to Pause/Resume.
-    - **ESC** to Emergency Exit.
+4.  **Servisi Başlatın**
+    - **START SERVICE** butonuna basın. Bot arka planda çalışmaya başlar.
+    - **F12** ile Durdur/Devam Et (Pause/Resume).
+    - **ESC** ile Acil Çıkış (Emergency Exit).
 
-## Project Structure
+## Proje Yapısı
 
-- `external_gui.py`: Main application entry point (GUI).
-- `external_bot.py`: CLI version (for headless operation).
-- `requirements.txt`: Python package list.
-- `LICENSE`: MIT License.
-- `EDUCATIONAL_CERTIFICATE.md`: Certificate of Use.
+- `external_gui.py`: Ana program (Arayüzlü).
+- `external_bot.py`: Komut satırı sürümü (Headless).
+- `requirements.txt`: Gerekli kütüphaneler.
+- `LICENSE`: MIT Lisansı.
+- `EDUCATIONAL_CERTIFICATE.md`: Eğitim amaçlı kullanım sertifikası.
 
-## License
+## Lisans
 
-Distributed under the MIT License. See `LICENSE` for more information.
+MIT Lisansı ile dağıtılmaktadır. Daha fazla bilgi için `LICENSE` dosyasına bakın.
