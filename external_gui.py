@@ -177,7 +177,7 @@ class SplashScreen(customtkinter.CTkToplevel):
         
         # Logo Text
         customtkinter.CTkLabel(self.inner, text="MT2 MACRO", font=("Segoe UI", 40, "bold"), text_color="white").pack(pady=(60, 5))
-        customtkinter.CTkLabel(self.inner, text="UNLEASHED PROTOCOL", font=("Segoe UI", 10, "bold"), text_color=C_ACCENT, spacing=2).pack(pady=0)
+        customtkinter.CTkLabel(self.inner, text="UNLEASHED PROTOCOL", font=("Segoe UI", 10, "bold"), text_color=C_ACCENT).pack(pady=0)
         
         # Loading Bar
         self.progress = customtkinter.CTkProgressBar(self.inner, width=200, height=4, progress_color=C_ACCENT, fg_color="#222")
