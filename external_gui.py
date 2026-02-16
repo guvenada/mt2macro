@@ -14,6 +14,8 @@ import os
 import ctypes
 import webbrowser
 import colorsys
+import json
+import winsound
 from datetime import datetime
 
 import tkinter
@@ -24,6 +26,39 @@ from PIL import Image, ImageTk
 import cv2
 import numpy as np
 import mss
+
+# ============================================
+# MANAGERS (Config & Sound)
+# ============================================
+class ConfigManager:
+    def __init__(self, file="config.json"):
+        self.file = file
+        self.default = {'threshold': 0.55, 'offset': 80, 'delay': 1.0}
+
+    def load(self):
+        if not os.path.exists(self.file): return self.default
+        try:
+            with open(self.file, 'r') as f: return {**self.default, **json.load(f)}
+        except: return self.default
+
+    def save(self, data):
+        try:
+            with open(self.file, 'w') as f: json.dump(data, f)
+        except: pass
+
+class SoundManager:
+    def play(self, sound_type):
+        threading.Thread(target=self._play_thread, args=(sound_type,), daemon=True).start()
+
+    def _play_thread(self, s_type):
+        try:
+            if s_type == "click": winsound.Beep(700, 50)
+            elif s_type == "hover": winsound.Beep(400, 10) 
+            elif s_type == "start": 
+                winsound.Beep(500, 100); winsound.Beep(700, 100); winsound.Beep(900, 200)
+            elif s_type == "alarm":
+                for _ in range(3): winsound.Beep(1000, 150); time.sleep(0.1)
+        except: pass
 
 # ============================================
 # ULTRA PREMIUM PALETTE
@@ -117,8 +152,8 @@ class VisionEngine:
         return final
 
 class WorkerThread(threading.Thread):
-    def __init__(self, log_queue, status_callback, config):
-        super().__init__(); self.log_queue = log_queue; self.status = status_callback; self.config = config; self.running = False; self.paused = True; self.daemon = True; self.vision = VisionEngine()
+    def __init__(self, log_queue, status_callback, config, sound_mgr):
+        super().__init__(); self.log_queue = log_queue; self.status = status_callback; self.config = config; self.sound_mgr = sound_mgr; self.running = False; self.paused = True; self.daemon = True; self.vision = VisionEngine()
     def log(self, msg): self.log_queue.put(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}")
     def run(self):
         if self.vision.template_target is None: self.log("Error: target.png missing!"); return
@@ -135,7 +170,7 @@ class WorkerThread(threading.Thread):
                 for _, _, b_gray in self.vision.boss_templates:
                     if self.vision.find_matches(gray, b_gray, 0.75): boss_found = True; break
                 if boss_found:
-                    self.log(">> ELITE DETECTED"); self.status("COMBAT MODE")
+                    self.log(">> ELITE DETECTED"); self.status("COMBAT MODE"); self.sound_mgr.play("alarm")
                     input_key(VK_SPACE, SCAN_SPACE, True)
                     for _ in range(150):
                         time.sleep(2); 
@@ -241,6 +276,12 @@ class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
         
+        # Managers
+        self.cfg_mgr = ConfigManager()
+        self.cfg = self.cfg_mgr.load()
+        self.snd = SoundManager()
+        self.snd.play("start")
+        
         # Setup Main Window (Hidden initially)
         self.withdraw() 
         self.title("MT2 MACRO Pro")
@@ -324,8 +365,18 @@ class App(customtkinter.CTk):
 
     def start_move(self, event): self.x, self.y = event.x, event.y
     def do_move(self, event): self.geometry(f"+{self.winfo_x() + event.x - self.x}+{self.winfo_y() + event.y - self.y}")
-    def close_app(self): self.destroy(); sys.exit()
+    
+    def close_app(self):
+        # Save Config
+        self.cfg['threshold'] = self.sl_thresh.get()
+        self.cfg['offset'] = self.sl_offset.get()
+        self.cfg['delay'] = self.sl_delay.get()
+        self.cfg_mgr.save(self.cfg)
+        self.snd.play("click")
+        self.destroy(); sys.exit()
+
     def minimize_window(self):
+        self.snd.play("click")
         # With WS_EX_APPWINDOW, iconify works better, but we stick to safe hide/show
         self.withdraw()
         self.overrideredirect(False)
@@ -340,9 +391,12 @@ class App(customtkinter.CTk):
 
     # --- Navigation with Fade Animation ---
     def add_menu_btn(self, text, icon, name, r):
+        def _cmd():
+            self.snd.play("click")
+            self.show_frame(name)
         btn = customtkinter.CTkButton(self.sidebar, text=f"  {icon}  {text}", anchor="w", font=("Segoe UI", 14), 
                                       fg_color="transparent", text_color=C_TEXT_DIM, hover_color="#1f2335", 
-                                      height=50, corner_radius=0, command=lambda: self.show_frame(name))
+                                      height=50, corner_radius=0, command=_cmd)
         btn.grid(row=r, column=0, sticky="ew")
         btn.name = name
         self.menu_buttons.append(btn)
@@ -396,7 +450,12 @@ class App(customtkinter.CTk):
         customtkinter.CTkLabel(c_stat, text="SYSTEM STATUS", font=("Segoe UI", 12, "bold"), text_color=C_TEXT_DIM).pack(pady=(15,5), padx=20, anchor="w")
         self.lbl_status = customtkinter.CTkLabel(c_stat, text="READY", font=("Segoe UI", 20, "bold"), text_color=C_SUCCESS)
         self.lbl_status.pack(pady=(0,15), padx=20, anchor="w")
-        self.btn_run = customtkinter.CTkButton(c_stat, text="ENGAGE PROTOCOL", font=("Segoe UI", 14, "bold"), height=50, fg_color=C_ACCENT, text_color=C_BG_MAIN, hover_color="#fff", corner_radius=8, command=self.toggle_power)
+        
+        def _toggle():
+            self.snd.play("click")
+            self.toggle_power()
+            
+        self.btn_run = customtkinter.CTkButton(c_stat, text="ENGAGE PROTOCOL", font=("Segoe UI", 14, "bold"), height=50, fg_color=C_ACCENT, text_color=C_BG_MAIN, hover_color="#fff", corner_radius=8, command=_toggle)
         self.btn_run.pack(side="right", padx=20, pady=20)
         
         self.log_box = customtkinter.CTkTextbox(f, fg_color=C_CARD, text_color="#a9b1d6", font=("Consolas", 11), corner_radius=10)
@@ -405,14 +464,16 @@ class App(customtkinter.CTk):
         
         f_act = customtkinter.CTkFrame(f, fg_color="transparent")
         f_act.grid(row=2, column=0, columnspan=2, padx=40, pady=(0,40), sticky="ew")
-        customtkinter.CTkButton(f_act, text="Capture Target", fg_color=C_CARD, hover_color="#292e42", command=lambda: self.capture("target")).pack(side="left", expand=True, fill="x", padx=(0,10))
-        customtkinter.CTkButton(f_act, text="Capture Elite", fg_color=C_CARD, hover_color="#292e42", command=lambda: self.capture("elite", True)).pack(side="left", expand=True, fill="x", padx=(10,0))
+        
+        def _cap(t): self.snd.play("click"); self.capture(t, t=="elite")
+        customtkinter.CTkButton(f_act, text="Capture Target", fg_color=C_CARD, hover_color="#292e42", command=lambda: _cap("target")).pack(side="left", expand=True, fill="x", padx=(0,10))
+        customtkinter.CTkButton(f_act, text="Capture Elite", fg_color=C_CARD, hover_color="#292e42", command=lambda: _cap("elite")).pack(side="left", expand=True, fill="x", padx=(10,0))
 
     def init_settings(self, f):
         customtkinter.CTkLabel(f, text="Configuration", font=("Segoe UI", 26, "bold"), text_color=C_TEXT).pack(anchor="w", padx=40, pady=(40,20))
-        self.slider_card(f, "Sensitivity", 0.1, 1.0, 0.55, "thresh")
-        self.slider_card(f, "Offset", 0, 200, 80, "offset")
-        self.slider_card(f, "Delay", 0.1, 5.0, 1.0, "delay")
+        self.slider_card(f, "Sensitivity", 0.1, 1.0, self.cfg.get('threshold', 0.55), "thresh")
+        self.slider_card(f, "Offset", 0, 200, self.cfg.get('offset', 80), "offset")
+        self.slider_card(f, "Delay", 0.1, 5.0, self.cfg.get('delay', 1.0), "delay")
 
     def slider_card(self, parent, title, min_v, max_v, def_v, tag):
         c = customtkinter.CTkFrame(parent, fg_color=C_CARD, corner_radius=10)
@@ -444,13 +505,14 @@ class App(customtkinter.CTk):
         if not self.is_running:
             self.is_running = True; self.btn_run.configure(text="TERMINATE", fg_color=C_DANGER); self.lbl_status.configure(text="RUNNING", text_color=C_ACCENT)
             cfg = {'threshold': self.sl_thresh.get(), 'offset': self.sl_offset.get(), 'delay': self.sl_delay.get()}
-            self.worker = WorkerThread(self.log_queue, lambda t: None, cfg); self.worker.running = True; self.worker.paused = False; self.worker.start()
+            self.worker = WorkerThread(self.log_queue, lambda t: None, cfg, self.snd); self.worker.running = True; self.worker.paused = False; self.worker.start()
         else:
             self.is_running = False; self.btn_run.configure(text="ENGAGE PROTOCOL", fg_color=C_ACCENT); self.lbl_status.configure(text="READY", text_color=C_SUCCESS)
             if self.worker: self.worker.running = False; self.worker.join(0.1)
 
     def capture(self, name, sub=False): self.log_queue.put(f"[{datetime.now().strftime('%H:%M:%S')}] Snapshot in 3s..."); self.after(3000, lambda: self._cap(name, sub))
     def _cap(self, name, sub):
+        self.snd.play("alarm") # Shutter sound sim
         with mss.mss() as sct: img = cv2.cvtColor(np.array(sct.grab(sct.monitors[1])), cv2.COLOR_BGRA2BGR)
         fname = f"{name}{1 if sub else ''}.png"
         if sub: 
