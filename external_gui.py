@@ -1,6 +1,6 @@
 """
-Harici Sistem İzleyici v2.1 (Pro GUI)
-=====================================
+Harici Sistem İzleyici v3.0 (Premium Edition)
+=============================================
 Sadece eğitim amaçlıdır (Educational use only).
 """
 
@@ -14,10 +14,9 @@ import math
 import os
 import ctypes
 import webbrowser
-import colorsys  # RGB efekti için
+import colorsys
 from datetime import datetime
 
-# GUI Kütüphaneleri
 import tkinter
 import customtkinter
 from PIL import Image, ImageTk
@@ -28,7 +27,18 @@ import numpy as np
 import mss
 
 # ============================================
-# GÜVENLİK VE ARAÇLAR (Obfuscation)
+# TEMALAR VE RENKLER (Pre-defined Premium Colors)
+# ============================================
+COLOR_BG = "#0F0F0F"          # Çok koyu gri/siyah
+COLOR_CARD = "#1A1A1A"        # Kart arkaplanı
+COLOR_ACCENT = "#00E5FF"      # Neon Cyan (Vurgu)
+COLOR_TEXT_MAIN = "#FFFFFF"
+COLOR_TEXT_SUB = "#AAAAAA"
+COLOR_BTN_HOVER = "#00B8D4"
+COLOR_BORDER = "#333333"
+
+# ============================================
+# GÜVENLİK VE ARAÇLAR
 # ============================================
 
 def _junk_math():
@@ -41,13 +51,11 @@ class _ServiceWorker:
         self.mem.append(random.getrandbits(128))
 
 def set_random_title(app_root):
-    """Pencere başlığını belirli aralıklarla değiştirir."""
     titles = [
         "System Monitor", "Background Service", "Task Executor", 
         "Runtime Broker", "Service Host", "DirectX Diagnostics",
         "Performance Monitor", "Network Service", "Update Worker"
     ]
-    
     while True:
         try:
             if random.random() < 0.2:
@@ -61,7 +69,7 @@ def set_random_title(app_root):
             pass
 
 # ============================================
-# SİSTEM GİRDİSİ (SYSTEM INPUT)
+# SİSTEM GİRDİSİ
 # ============================================
 
 user32 = ctypes.windll.user32
@@ -81,13 +89,13 @@ def input_key(vk, scan, down=True):
 
 def click(x, y):
     SetCursorPos(int(x), int(y))
-    time.sleep(0.08)
-    mouse_event(0x0008, 0, 0, 0, 0) 
-    time.sleep(0.04)
+    time.sleep(0.05)
+    mouse_event(0x0008, 0, 0, 0, 0)
+    time.sleep(0.03)
     mouse_event(0x0010, 0, 0, 0, 0)
-    time.sleep(0.08)
+    time.sleep(0.05)
     mouse_event(0x0002, 0, 0, 0, 0)
-    time.sleep(0.04)
+    time.sleep(0.03)
     mouse_event(0x0004, 0, 0, 0, 0)
 
 def rotate_cam():
@@ -96,7 +104,7 @@ def rotate_cam():
     input_key(VK_E, SCAN_E, False)
 
 # ============================================
-# GÖRÜNTÜ MOTORU (VISION ENGINE)
+# GÖRÜNTÜ VE BOT MOTORU
 # ============================================
 
 class VisionEngine:
@@ -121,7 +129,6 @@ class VisionEngine:
                 g = cv2.cvtColor(t, cv2.COLOR_BGR2GRAY)
                 self.boss_templates.append((f"elite{i}", t, g))
             i += 1
-            
         return self.template_target is not None, len(self.boss_templates)
 
     def grab_screen(self):
@@ -133,21 +140,15 @@ class VisionEngine:
 
     def find_matches(self, scene_gray, template, thresh=0.55):
         if template is None: return []
-        th, tw = template.shape[:2]
         res = cv2.matchTemplate(scene_gray, template, cv2.TM_CCOEFF_NORMED)
         locs = np.where(res >= thresh)
-        candidates = []
-        for pt in zip(*locs[::-1]):
-            candidates.append((pt[0] + tw//2, pt[1] + th//2, res[pt[1], pt[0]]))
+        th, tw = template.shape[:2]
+        candidates = [(pt[0] + tw//2, pt[1] + th//2, res[pt[1], pt[0]]) for pt in zip(*locs[::-1])]
         final = []
         for c in sorted(candidates, key=lambda x: -x[2]):
             if not any(abs(c[0]-f[0]) < 20 and abs(c[1]-f[1]) < 20 for f in final):
                 final.append(c)
         return final
-
-# ============================================
-# BOT İŞÇİ PARÇACIĞI (WORKER THREAD)
-# ============================================
 
 class WorkerThread(threading.Thread):
     def __init__(self, log_queue, status_callback, config):
@@ -161,17 +162,16 @@ class WorkerThread(threading.Thread):
         self.vision = VisionEngine()
         
     def log(self, msg):
-        ts = datetime.now().strftime("%H:%M:%S")
-        self.log_queue.put(f"[{ts}] {msg}")
+        self.log_queue.put(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}")
 
     def run(self):
         loaded, n_boss = self.vision.load_assets()
         if not loaded:
-            self.log("HATA: target.png bulunamadı! (ERROR)")
-            self.status("Durum: Hata (Error)")
+            self.log("HATA: target.png eksik!")
+            self.status("Durum: Hata")
             return
-            
-        self.log(f"Varlıklar Yüklendi: Hedef={loaded}, YanHedefler={n_boss}")
+        
+        self.log(f"Sistem Aktif. Hedefler: {n_boss+1}")
         cx, cy = GetSystemMetrics(0) // 2, GetSystemMetrics(1) // 2
         offset = int(self.config.get('offset', 80))
         
@@ -185,7 +185,7 @@ class WorkerThread(threading.Thread):
                 if frame is None: continue
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                 
-                # Check Elites
+                # Boss Check
                 boss_found = False
                 for _, _, b_gray in self.vision.boss_templates:
                     if self.vision.find_matches(gray, b_gray, 0.75):
@@ -193,277 +193,329 @@ class WorkerThread(threading.Thread):
                         break
                 
                 if boss_found:
-                    self.log(">> ELİT TESPİT EDİLDİ -> Saldırılıyor")
-                    self.status("Durum: Elit Saldırısı")
+                    self.log(">> ELİT TESPİT EDİLDİ")
+                    self.status("Durum: Elit Savaş")
                     input_key(VK_SPACE, SCAN_SPACE, True)
-                    waited, no_boss = 0, 0
-                    while waited < 300:
+                    
+                    for _ in range(150): # 300sn
                         time.sleep(2)
-                        waited += 2
-                        if self.paused or not self.running:
-                            input_key(VK_SPACE, SCAN_SPACE, False)
-                            break
+                        if self.paused or not self.running: break
+                        
                         f2 = self.vision.grab_screen()
                         if f2 is None: continue
                         g2 = cv2.cvtColor(f2, cv2.COLOR_BGR2GRAY)
-                        if any(self.vision.find_matches(g2, bg, 0.75) for _, _, bg in self.vision.boss_templates):
-                            no_boss = 0
-                        else:
-                            no_boss += 1
-                            if no_boss >= 7:
-                                self.log(f">> Elit Temizlendi ({waited}s)")
+                        if not any(self.vision.find_matches(g2, bg, 0.75) for _, _, bg in self.vision.boss_templates):
+                            # Teyit için biraz bekle ve tekrar bak (basit countersız)
+                            no_boss_chk = 0
+                            for _ in range(5):
+                                time.sleep(0.2)
+                                f3 = self.vision.grab_screen()
+                                if f3 is None: continue
+                                g3 = cv2.cvtColor(f3, cv2.COLOR_BGR2GRAY)
+                                if not any(self.vision.find_matches(g3, bg, 0.75) for _, _, bg in self.vision.boss_templates):
+                                    no_boss_chk += 1
+                            if no_boss_chk >= 4:
+                                self.log(">> Elit Temizlendi")
                                 break
                     input_key(VK_SPACE, SCAN_SPACE, False)
-                    self.status("Durum: Aranıyor")
+                    self.status("Durum: Arama")
                     continue
                 
-                # Check Targets
+                # Target Check
                 targets = self.vision.find_matches(gray, self.vision.target_gray, float(self.config.get('threshold', 0.55)))
                 if targets:
                     valid = [t for t in targets if (t[0]-cx)**2 + (t[1]-cy)**2 > 80**2]
                     if valid:
                         best = min(valid, key=lambda t: (t[0]-cx)**2 + (t[1]-cy)**2)
                         tx, ty = best[0], best[1] + offset
-                        self.log(f"Hedef Bulundu -> ({tx}, {ty})")
-                        self.status("Durum: İşlem")
+                        self.log(f"Hedef -> ({tx}, {ty})")
+                        self.status("Durum: Saldırı")
                         click(tx, ty)
                         time.sleep(float(self.config.get('delay', 1.0)))
                     else:
                         rotate_cam()
                 else:
-                    self.status("Durum: Taranıyor")
+                    self.status("Durum: Tarama")
                     rotate_cam()
                 time.sleep(0.1)
-                
             except Exception as e:
                 self.log(f"Hata: {e}")
                 time.sleep(1)
 
 # ============================================
-# SPLASH SCREEN (AÇILIŞ EKRANI)
+# SPLASH SCREEN
 # ============================================
-
 class SplashScreen(customtkinter.CTkToplevel):
     def __init__(self, parent):
         super().__init__(parent)
-        self.geometry("400x300")
-        self.overrideredirect(True) # Çerçevesiz
+        self.geometry("400x250")
+        self.overrideredirect(True)
         self.attributes('-topmost', True)
-        self.attributes('-alpha', 0.0) # Başlangıçta görünmez
+        self.attributes('-alpha', 0.0)
         
-        # Ekranı ortala
-        sw = self.winfo_screenwidth()
-        sh = self.winfo_screenheight()
-        x = (sw - 400) // 2
-        y = (sh - 300) // 2
-        self.geometry(f"+{x}+{y}")
+        sw, sh = self.winfo_screenwidth(), self.winfo_screenheight()
+        self.geometry(f"+{(sw-400)//2}+{(sh-250)//2}")
         
-        # İçerik
-        self.frame = customtkinter.CTkFrame(self, fg_color="#1a1a1a", corner_radius=20, border_width=2, border_color="#333")
+        self.frame = customtkinter.CTkFrame(self, fg_color="#0F0F0F", corner_radius=20, border_width=1, border_color="#333333")
         self.frame.pack(fill="both", expand=True)
         
-        lbl_title = customtkinter.CTkLabel(self.frame, text="MT2 MACRO", font=("Roboto", 40, "bold"), text_color="white")
-        lbl_title.pack(pady=(80, 10))
+        customtkinter.CTkLabel(self.frame, text="MT2 MACRO", font=("Roboto", 45, "bold"), text_color="white").pack(pady=(60, 5))
+        customtkinter.CTkLabel(self.frame, text="PREMIUM AUTOMATION SUITE", font=("Roboto", 10, "bold"), text_color=COLOR_ACCENT, spacing=2).pack(pady=0)
         
-        lbl_sub = customtkinter.CTkLabel(self.frame, text="Loading System Modules...", font=("Roboto", 12), text_color="#aaaaaa")
-        lbl_sub.pack(pady=5)
-        
-        self.progress = customtkinter.CTkProgressBar(self.frame, width=200, height=10, progress_color="#00ff00")
-        self.progress.pack(pady=20)
+        self.progress = customtkinter.CTkProgressBar(self.frame, width=200, height=4, progress_color=COLOR_ACCENT, fg_color="#222")
+        self.progress.pack(pady=40)
         self.progress.set(0)
         
-        # Animasyon Başlat
         self.fade_in()
 
     def fade_in(self):
         alpha = self.attributes('-alpha')
         if alpha < 1.0:
-            alpha += 0.05
-            self.attributes('-alpha', alpha)
+            self.attributes('-alpha', alpha + 0.05)
             self.after(20, self.fade_in)
         else:
             self.load_modules()
             
     def load_modules(self):
-        # Yükleme simülasyonu
         val = self.progress.get()
         if val < 1.0:
-            val += 0.02
-            self.progress.set(val)
-            self.after(20, self.load_modules) # Hızlı geçiş
+            self.progress.set(val + 0.02)
+            self.after(15, self.load_modules)
         else:
             self.fade_out()
             
     def fade_out(self):
         alpha = self.attributes('-alpha')
         if alpha > 0.0:
-            alpha -= 0.05
-            self.attributes('-alpha', alpha)
+            self.attributes('-alpha', alpha - 0.05)
             self.after(20, self.fade_out)
         else:
             self.destroy()
-            self.master.deiconify() # Ana pencereyi göster
+            self.master.deiconify()
 
 # ============================================
-# MAIN GUI (RGB & PRO)
+# MAIN GUI
 # ============================================
 
 customtkinter.set_appearance_mode("Dark")
-customtkinter.set_default_color_theme("blue")
+customtkinter.set_default_color_theme("green") # Butonlar için temel
 
 class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
-        self.withdraw() # İlk başta gizle (Splash için)
+        self.withdraw()
         
-        # Güvenlik
         self._junk = _ServiceWorker()
         threading.Thread(target=set_random_title, args=(self,), daemon=True).start()
 
-        self.title("mt2macro - Pro Edition")
-        self.geometry("800x600")
+        self.title("mt2macro - Premium")
+        self.geometry("900x600")
+        self.configure(fg_color=COLOR_BG)
         
-        # RGB Frame (Ana kapsayıcı)
-        self.rgb_hue = 0
-        self.rgb_frame = customtkinter.CTkFrame(self, corner_radius=0)
-        self.rgb_frame.pack(fill="both", expand=True)
+        # RGB Kapsayıcı
+        self.rgb_hue = 0.5
+        self.rgb_frame = customtkinter.CTkFrame(self, corner_radius=0, fg_color=COLOR_BG)
+        self.rgb_frame.pack(fill="both", expand=True) # Kenarlık efekti için padding vermiyoruz, sidebar border kullanacağız
         
-        # İçerik Frame (RGB içinde biraz küçük durarak kenarlık efekti verir)
-        self.main_container = customtkinter.CTkFrame(self.rgb_frame, corner_radius=10, fg_color="#1a1a1a")
-        self.main_container.pack(fill="both", expand=True, padx=3, pady=3)
+        # === ANA DÜZEN ===
+        self.rgb_frame.grid_columnconfigure(1, weight=1)
+        self.rgb_frame.grid_rowconfigure(0, weight=1)
         
-        # === Layout Ayarları ===
-        self.main_container.grid_columnconfigure(1, weight=1)
-        self.main_container.grid_rowconfigure(0, weight=1)
+        # === SIDEBAR (Sol Menü) ===
+        self.sidebar = customtkinter.CTkFrame(self.rgb_frame, width=220, corner_radius=0, fg_color=COLOR_CARD, border_width=0)
+        self.sidebar.grid(row=0, column=0, sticky="nsew")
+        self.sidebar.grid_rowconfigure(6, weight=1)
         
-        # === SIDEBAR ===
-        self.sidebar = customtkinter.CTkFrame(self.main_container, width=200, corner_radius=10)
-        self.sidebar.grid(row=0, column=0, rowspan=4, sticky="nsew", padx=10, pady=10)
-        self.sidebar.grid_rowconfigure(5, weight=1)
+        # Logo
+        customtkinter.CTkLabel(self.sidebar, text="MT2 MACRO", font=("Roboto", 28, "bold"), text_color="white").grid(row=0, column=0, padx=20, pady=(30, 5))
+        customtkinter.CTkLabel(self.sidebar, text="v3.1 Stable", font=("Roboto", 10), text_color=COLOR_ACCENT).grid(row=1, column=0, padx=20, pady=(0, 30))
         
-        logo = customtkinter.CTkLabel(self.sidebar, text="MT2 MACRO", font=customtkinter.CTkFont(size=24, weight="bold"))
-        logo.grid(row=0, column=0, padx=20, pady=(20, 10))
+        # Menü Butonları
+        self.btn_dash = self.create_menu_btn("Panel", "🏠", self.show_dashboard, 2)
+        self.btn_set = self.create_menu_btn("Ayarlar", "⚙️", self.show_settings, 3)
+        self.btn_info = self.create_menu_btn("Hakkında", "ℹ️", lambda: None, 4)
         
-        self.btn_dash = customtkinter.CTkButton(self.sidebar, text="Panel (Dashboard)", command=self.show_dashboard)
-        self.btn_dash.grid(row=1, column=0, padx=20, pady=10)
+        # Sosyal
+        f_social = customtkinter.CTkFrame(self.sidebar, fg_color="transparent")
+        f_social.grid(row=7, column=0, padx=20, pady=20, sticky="s")
         
-        self.btn_set = customtkinter.CTkButton(self.sidebar, text="Ayarlar (Settings)", command=self.show_settings)
-        self.btn_set.grid(row=2, column=0, padx=20, pady=10)
+        self.create_link(f_social, "GitHub", "https://github.com/guvenada")
+        self.create_link(f_social, "LinkedIn", "https://linkedin.com/in/guvenada")
         
-        # === REKLAM / SOSYAL LİNKLER ===
-        lbl_dev = customtkinter.CTkLabel(self.sidebar, text="Geliştirici (Dev)", text_color="gray", font=("Arial", 10))
-        lbl_dev.grid(row=5, column=0, padx=20, pady=(10,0), sticky="s")
+        # === İÇERİK ALANI ===
+        self.content = customtkinter.CTkFrame(self.rgb_frame, corner_radius=20, fg_color="#141414")
+        self.content.grid(row=0, column=1, sticky="nsew", padx=20, pady=20)
+        self.content.grid_rowconfigure(0, weight=1)
+        self.content.grid_columnconfigure(0, weight=1)
         
-        link_gh = customtkinter.CTkLabel(self.sidebar, text="GitHub: @guvenada", text_color="#3B8ED0", cursor="hand2")
-        link_gh.grid(row=6, column=0, padx=20, pady=2)
-        link_gh.bind("<Button-1>", lambda e: webbrowser.open("https://github.com/guvenada"))
-        
-        link_li = customtkinter.CTkLabel(self.sidebar, text="LinkedIn: @guvenada", text_color="#3B8ED0", cursor="hand2")
-        link_li.grid(row=7, column=0, padx=20, pady=(2, 20))
-        link_li.bind("<Button-1>", lambda e: webbrowser.open("https://linkedin.com/in/guvenada"))
-        
-        # === İÇERİK ===
-        self.frame_dash = customtkinter.CTkFrame(self.main_container, corner_radius=0, fg_color="transparent")
-        self.frame_set = customtkinter.CTkFrame(self.main_container, corner_radius=0, fg_color="transparent")
+        # Sayfalar
+        self.frame_dash = customtkinter.CTkFrame(self.content, fg_color="transparent")
+        self.frame_set = customtkinter.CTkFrame(self.content, fg_color="transparent")
         
         self.setup_dashboard()
         self.setup_settings()
         
         self.show_dashboard()
         
-        # === SİSTEMLER ===
+        # Bot Sistem
         self.log_queue = queue.Queue()
         self.worker = None
         self.is_running = False
         self.after(100, self.update_logs)
         
-        # RGB Döngüsü Başlat
-        self.animate_rgb()
+        # RGB Animasyon
+        self.animate_border()
         
-        # Splash Screen Göster
-        self.after(100, lambda: SplashScreen(self))
+        # Splash
+        self.after(200, lambda: SplashScreen(self))
 
-    def animate_rgb(self):
-        # Smooth RGB border animation
-        self.rgb_hue += 0.005 # Hız
+    def create_menu_btn(self, text, icon, cmd, r):
+        btn = customtkinter.CTkButton(
+            self.sidebar, 
+            text=f"{icon}   {text}", 
+            anchor="w", 
+            fg_color="transparent", 
+            text_color="#DDD",
+            hover_color="#333", 
+            height=45,
+            corner_radius=10,
+            font=("Roboto", 14),
+            command=cmd
+        )
+        btn.grid(row=r, column=0, padx=15, pady=5, sticky="ew")
+        return btn
+
+    def create_link(self, parent, text, url):
+        lbl = customtkinter.CTkLabel(parent, text=f"🔗 {text}", text_color="#555", cursor="hand2", font=("Roboto", 11))
+        lbl.pack(pady=2)
+        lbl.bind("<Button-1>", lambda e: webbrowser.open(url))
+        lbl.bind("<Enter>", lambda e: lbl.configure(text_color=COLOR_ACCENT))
+        lbl.bind("<Leave>", lambda e: lbl.configure(text_color="#555"))
+
+    def animate_border(self):
+        self.rgb_hue += 0.002
         if self.rgb_hue > 1.0: self.rgb_hue = 0.0
+        rgb = colorsys.hsv_to_rgb(self.rgb_hue, 0.8, 1.0)
+        color = "#%02x%02x%02x" % (int(rgb[0]*255), int(rgb[1]*255), int(rgb[2]*255))
         
-        rgb = colorsys.hsv_to_rgb(self.rgb_hue, 1.0, 1.0)
-        color_hex = "#%02x%02x%02x" % (int(rgb[0]*255), int(rgb[1]*255), int(rgb[2]*255))
-        
-        self.rgb_frame.configure(fg_color=color_hex)
-        self.sidebar.configure(border_width=1, border_color=color_hex)
-        
-        self.after(20, self.animate_rgb)
+        # Sidebar'ın sağ kenarında ince bir çizgi efekti
+        self.sidebar.configure(border_width=2, border_color=color)
+        self.after(50, self.animate_border)
 
     def setup_dashboard(self):
-        self.btn_power = customtkinter.CTkButton(self.frame_dash, text="SERVİSİ BAŞLAT", height=60, fg_color="#2ecc71", hover_color="#27ae60", font=("Arial", 16, "bold"), command=self.toggle_power)
-        self.btn_power.pack(pady=20, padx=20, fill="x")
+        f = self.frame_dash
+        f.pack(fill="both", expand=True, padx=30, pady=30)
         
-        self.log_box = customtkinter.CTkTextbox(self.frame_dash, height=300)
-        self.log_box.pack(pady=10, padx=20, fill="both", expand=True)
-        self.log_box.insert("0.0", ">> Sistem Hazır...\n")
+        # Başlık ve Durum
+        top_bar = customtkinter.CTkFrame(f, fg_color="transparent")
+        top_bar.pack(fill="x", pady=(0, 20))
+        
+        customtkinter.CTkLabel(top_bar, text="Kontrol Paneli", font=("Roboto", 24, "bold"), text_color=COLOR_TEXT_MAIN).pack(side="left")
+        self.lbl_status = customtkinter.CTkLabel(top_bar, text="HAZIR", font=("Roboto", 12, "bold"), text_color="#777", fg_color="#222", corner_radius=5, padx=10, pady=5)
+        self.lbl_status.pack(side="right")
+        
+        # Ana Buton (POWER)
+        self.btn_power = customtkinter.CTkButton(
+            f, text="SERVİSİ BAŞLAT", 
+            font=("Roboto", 16, "bold"), 
+            height=60, 
+            corner_radius=30, # Yuvarlak (Pill)
+            fg_color=COLOR_ACCENT, 
+            text_color="black",
+            hover_color="white",
+            command=self.toggle_power,
+            border_spacing=5
+        )
+        self.btn_power.pack(fill="x", pady=20)
+        
+        # Log Kartı
+        log_card = customtkinter.CTkFrame(f, fg_color=COLOR_CARD, corner_radius=15, border_width=1, border_color=COLOR_BORDER)
+        log_card.pack(fill="both", expand=True, pady=10)
+        
+        customtkinter.CTkLabel(log_card, text="Sistem Kayıtları", font=("Roboto", 12, "bold"), text_color="#555").pack(pady=10, padx=15, anchor="w")
+        
+        self.log_box = customtkinter.CTkTextbox(log_card, fg_color="transparent", text_color="#CCC", font=("Consolas", 12))
+        self.log_box.pack(fill="both", expand=True, padx=10, pady=(0,10))
+        self.log_box.insert("0.0", f"[{datetime.now().strftime('%H:%M')}] Sistem hazır ve bekliyor...\n")
         self.log_box.configure(state="disabled")
+
+        # Araçlar
+        tool_grid = customtkinter.CTkFrame(f, fg_color="transparent")
+        tool_grid.pack(fill="x", pady=10)
         
-        f_caps = customtkinter.CTkFrame(self.frame_dash, fg_color="transparent")
-        f_caps.pack(pady=10, padx=20, fill="x")
-        
-        customtkinter.CTkButton(f_caps, text="Ana Hedef Yakala", command=lambda: self.capture("target")).pack(side="left", padx=5, expand=True)
-        customtkinter.CTkButton(f_caps, text="Alt Hedef Yakala", command=lambda: self.capture("elite", True)).pack(side="right", padx=5, expand=True)
-        
-        self.lbl_stat = customtkinter.CTkLabel(self.frame_dash, text="Durum: BOŞTA", font=("Arial", 14))
-        self.lbl_stat.pack(pady=10)
+        self.create_tool_btn(tool_grid, "🎯 Ana Hedef Tanımla", lambda: self.capture("target"), 0)
+        self.create_tool_btn(tool_grid, "👹 Elit Hedef Tanımla", lambda: self.capture("elite", True), 1)
+
+    def create_tool_btn(self, parent, text, cmd, col):
+        b = customtkinter.CTkButton(
+            parent, text=text, 
+            fg_color="#222", hover_color="#333", 
+            border_width=1, border_color="#444", 
+            height=40, corner_radius=10, command=cmd
+        )
+        b.pack(side="left", fill="x", expand=True, padx=5 if col==1 else (0,5))
 
     def setup_settings(self):
-        customtkinter.CTkLabel(self.frame_set, text="Ayarlar", font=("Arial", 20)).pack(pady=20)
+        f = self.frame_set
+        f.pack(fill="both", expand=True, padx=40, pady=40)
         
-        self.in_th = self.add_setting("Hassasiyet (0.1 - 1.0)", "0.55")
-        self.in_off = self.add_setting("Y-Ofset (px)", "80")
-        self.in_del = self.add_setting("Gecikme (sn)", "1.0")
+        customtkinter.CTkLabel(f, text="Yapılandırma", font=("Roboto", 24, "bold")).pack(anchor="w", pady=(0,30))
+        
+        self.in_th = self.add_param(f, "Algılama Hassasiyeti (Threshold)", "0.55")
+        self.in_off = self.add_param(f, "Tıklama Kaydırma (Offset Y)", "80")
+        self.in_del = self.add_param(f, "İşlem Aralığı (Delay)", "1.0")
+        
+        customtkinter.CTkLabel(f, text="* Değişiklikler için servisi yeniden başlatın.", text_color="gray", font=("Roboto", 10)).pack(pady=20)
 
-    def add_setting(self, text, val):
-        customtkinter.CTkLabel(self.frame_set, text=text).pack(pady=(10,0))
-        entry = customtkinter.CTkEntry(self.frame_set)
-        entry.insert(0, val)
-        entry.pack(pady=5)
-        return entry
+    def add_param(self, parent, title, val):
+        card = customtkinter.CTkFrame(parent, fg_color=COLOR_CARD, corner_radius=10)
+        card.pack(fill="x", pady=10)
+        
+        customtkinter.CTkLabel(card, text=title, font=("Roboto", 12)).pack(side="left", padx=20, pady=15)
+        
+        e = customtkinter.CTkEntry(card, width=100, border_color="#333", fg_color="#111")
+        e.insert(0, val)
+        e.pack(side="right", padx=20, pady=15)
+        return e
 
     def show_dashboard(self):
-        self.frame_set.grid_forget()
-        self.frame_dash.grid(row=0, column=1, rowspan=4, sticky="nsew", padx=20, pady=20)
+        self.frame_set.pack_forget()
+        self.frame_dash.pack(fill="both", expand=True, padx=30, pady=30)
+        self.btn_dash.configure(fg_color="#333")
+        self.btn_set.configure(fg_color="transparent")
 
     def show_settings(self):
-        self.frame_dash.grid_forget()
-        self.frame_set.grid(row=0, column=1, rowspan=4, sticky="nsew", padx=20, pady=20)
-
-    def log_msg(self, msg):
-        self.log_box.configure(state="normal")
-        self.log_box.insert("end", msg + "\n")
-        self.log_box.see("end")
-        self.log_box.configure(state="disabled")
+        self.frame_dash.pack_forget()
+        self.frame_set.pack(fill="both", expand=True, padx=40, pady=40)
+        self.btn_dash.configure(fg_color="transparent")
+        self.btn_set.configure(fg_color="#333")
 
     def update_logs(self):
         while not self.log_queue.empty():
-            self.log_msg(self.log_queue.get())
+            msg = self.log_queue.get()
+            self.log_box.configure(state="normal")
+            self.log_box.insert("end", msg + "\n")
+            self.log_box.see("end")
+            self.log_box.configure(state="disabled")
         self.after(100, self.update_logs)
 
     def toggle_power(self):
         if not self.is_running:
             self.is_running = True
-            self.btn_power.configure(text="SERVİSİ DURDUR", fg_color="#e74c3c", hover_color="#c0392b")
-            self.log_msg(">> Servis Başlatıldı")
+            self.btn_power.configure(text="SERVİSİ DURDUR", fg_color="#FF3D00", hover_color="#DD2C00")
+            self.lbl_status.configure(text="AKTİF", text_color="#00E5FF")
+            
             cfg = {'threshold': self.in_th.get(), 'offset': self.in_off.get(), 'delay': self.in_del.get()}
-            self.worker = WorkerThread(self.log_queue, lambda t: self.lbl_stat.configure(text=t), cfg)
+            self.worker = WorkerThread(self.log_queue, lambda t: None, cfg)
             self.worker.running = True; self.worker.paused = False; self.worker.start()
         else:
             self.is_running = False
-            self.btn_power.configure(text="SERVİSİ BAŞLAT", fg_color="#2ecc71", hover_color="#27ae60")
-            self.log_msg(">> Servis Durduruldu")
-            self.lbl_stat.configure(text="Durum: BOŞTA")
+            self.btn_power.configure(text="SERVİSİ BAŞLAT", fg_color=COLOR_ACCENT, hover_color="white")
+            self.lbl_status.configure(text="DURDURULDU", text_color="#777")
             if self.worker: self.worker.running = False
 
     def capture(self, name, sub=False):
-        self.log_msg(f"'{name}' 3s içinde yakalanıyor...")
+        self.log_queue.put(f"[{datetime.now().strftime('%H:%M:%S')}] Yakalama 3sn içinde...")
         self.after(3000, lambda: self._cap(name, sub))
 
     def _cap(self, name, sub):
@@ -476,7 +528,7 @@ class App(customtkinter.CTk):
             while os.path.exists(f"{name}{i}.png"): i += 1
             fname = f"{name}{i}"
         cv2.imwrite(f"{fname}.png", img)
-        self.log_msg(f"Kaydedildi: {fname}")
+        self.log_queue.put(f"[{datetime.now().strftime('%H:%M:%S')}] Kaydedildi: {fname}")
         try:
             import subprocess
             subprocess.Popen(["mspaint", os.path.abspath(f"{fname}.png")])
