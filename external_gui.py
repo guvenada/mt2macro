@@ -308,14 +308,33 @@ class App(customtkinter.CTk):
         # Launch Splash
         self.after(100, lambda: SplashScreen(self))
 
-    # --- Windows Helpers ---
+    def set_app_window(self):
+        GWL_EXSTYLE = -20
+        WS_EX_APPWINDOW = 0x00040000
+        WS_EX_TOOLWINDOW = 0x00000080
+        hwnd = ctypes.windll.user32.GetParent(self.winfo_id())
+        style = ctypes.windll.user32.GetWindowLongW(hwnd, GWL_EXSTYLE)
+        style = style & ~WS_EX_TOOLWINDOW
+        style = style | WS_EX_APPWINDOW
+        ctypes.windll.user32.SetWindowLongW(hwnd, GWL_EXSTYLE, style)
+        self.wm_withdraw()
+        self.after(10, lambda: self.wm_deiconify())
+
     def start_move(self, event): self.x, self.y = event.x, event.y
     def do_move(self, event): self.geometry(f"+{self.winfo_x() + event.x - self.x}+{self.winfo_y() + event.y - self.y}")
     def close_app(self): self.destroy(); sys.exit()
     def minimize_window(self):
-        self.withdraw(); self.overrideredirect(False); self.iconify(); self.bind("<FocusIn>", self.restore_window)
+        # With WS_EX_APPWINDOW, iconify works better, but we stick to safe hide/show
+        self.withdraw()
+        self.overrideredirect(False)
+        self.iconify()
+        self.bind("<FocusIn>", self.restore_window)
+        
     def restore_window(self, event):
-        self.overrideredirect(True); self.unbind("<FocusIn>"); self.lift()
+        self.overrideredirect(True)
+        self.set_app_window() # Re-apply style on restore
+        self.unbind("<FocusIn>")
+        self.lift()
 
     # --- Navigation with Fade Animation ---
     def add_menu_btn(self, text, icon, name, r):
@@ -337,11 +356,35 @@ class App(customtkinter.CTk):
         new_f = self.frames[name]
         old_f = self.frames[self.current_frame] if self.current_frame else None
         
-        if old_f: old_f.pack_forget() # Instant switch for speed, "smooth" feel comes from UI design
-        new_f.pack(fill="both", expand=True) # Using pack inside the grid cell
+        # Slide Animation
+        if old_f:
+            self.animate_slide(old_f, new_f)
+        else:
+            new_f.place(x=0, y=0, relwidth=1, relheight=1)
         
-        # Optional: Fade sim (Tkinter frames don't support alpha, so we just switch cleanly)
         self.current_frame = name
+
+    def animate_slide(self, f1, f2):
+        # f1 slides out left, f2 slides in from right
+        f2.place(x=950, y=0, relwidth=1, relheight=1)
+        f2.lift()
+        
+        def _step(i):
+            if i >= 101:
+                f1.place_forget()
+                f2.place(x=0, y=0, relwidth=1, relheight=1)
+                return
+            
+            # Easing function (ease out)
+            p = 1 - math.pow(1 - i/100, 3)
+            
+            offset_x = int(950 * p)
+            f2.place(x=950-offset_x, y=0)
+            # f1.place(x=-offset_x, y=0) # Optional: Slide old out too, but overlapping is safer for perf
+            
+            self.after(5, lambda: _step(i+4))
+            
+        _step(0)
 
     # --- Pages ---
     def init_dashboard(self, f):
@@ -418,4 +461,5 @@ class App(customtkinter.CTk):
 
 if __name__ == "__main__":
     app = App()
+    app.after(100, app.set_app_window) # Ensure taskbar icon appears
     app.mainloop()
