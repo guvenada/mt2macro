@@ -260,7 +260,7 @@ class SplashScreen(customtkinter.CTkToplevel):
         self.frame.pack(fill="both", expand=True)
         
         customtkinter.CTkLabel(self.frame, text="MT2 MACRO", font=("Roboto", 45, "bold"), text_color="white").pack(pady=(60, 5))
-        customtkinter.CTkLabel(self.frame, text="PREMIUM AUTOMATION SUITE", font=("Roboto", 10, "bold"), text_color=COLOR_ACCENT, spacing=2).pack(pady=0)
+        customtkinter.CTkLabel(self.frame, text="PREMIUM AUTOMATION SUITE", font=("Roboto", 10, "bold"), text_color=COLOR_ACCENT).pack(pady=0)
         
         self.progress = customtkinter.CTkProgressBar(self.frame, width=200, height=4, progress_color=COLOR_ACCENT, fg_color="#222")
         self.progress.pack(pady=40)
