@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Templates (User specific)
+*.png
+*.jpg
+*.jpeg
+
+# Environment
+.env
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
