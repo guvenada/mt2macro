@@ -23,7 +23,10 @@ Detaylar için `EDUCATIONAL_CERTIFICATE.md` dosyasına bakabilirsiniz.
 ## Özellikler
 
 - **Gizlilik Odaklı (Stealth)**: Sistem süreçlerini taklit etmek için pencere başlığını rastgele değiştirir.
-- **Modern Arayüz (GUI)**: Göz yormayan koyu tema (dark mode).
+- **Modern Arayüz (GUI)**:
+  - **RGB Efekti**: Profesyonel görünüm için renk değiştiren kenarlıklar.
+  - **Açılış Ekranı (Splash Screen)**: Yumuşak geçişli (smooth transition) yükleme ekranı.
+  - **Koyu Tema (Dark Mode)**: Göz yormayan tasarım.
 - **Performans**: İşlemciyi yormaz, arkada sessizce çalışır (~1-2% CPU).
 - **Esneklik**: Görsel şablonlar (templates) sayesinde her türlü masaüstü uygulamasında çalışır.
 - **Güvenlik**: Takılma durumlarını algılar ve zaman aşımı (timeout) koruması içerir.
