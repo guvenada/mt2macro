@@ -249,10 +249,10 @@ class App(customtkinter.CTk):
             fg_color="transparent", hover_color=C_DANGER, command=self.close_app
         ).pack(side="right")
         
-        # Minimize Button (Simplified: just iconify, might need taskbar fix but okay for now)
+        # Minimize Button
         customtkinter.CTkButton(
             self.title_bar, text="—", width=40, font=("Arial", 14),
-            fg_color="transparent", hover_color="#333", command=self.iconify
+            fg_color="transparent", hover_color="#333", command=self.minimize_window
         ).pack(side="right")
 
         # 3. Main Layout
@@ -268,7 +268,6 @@ class App(customtkinter.CTk):
         
         # Branding
         customtkinter.CTkLabel(self.sidebar, text="∞", font=("Arial", 60), text_color=C_ACCENT).grid(row=0, column=0, pady=(20,0))
-        customtkinter.CTkLabel(self.sidebar, text="UNLEASHED", font=("Segoe UI", 12, "bold"), text_color=C_TEXT).grid(row=1, column=0, pady=(0,30))
         
         # Nav Buttons
         self.menu_buttons = []
@@ -279,8 +278,7 @@ class App(customtkinter.CTk):
         # User Tag
         p_frame = customtkinter.CTkFrame(self.sidebar, fg_color="#0f1019", corner_radius=8)
         p_frame.grid(row=6, column=0, padx=20, pady=20, sticky="ew")
-        customtkinter.CTkLabel(p_frame, text="GuvenAda", font=("Segoe UI", 12, "bold"), text_color=C_ACCENT).pack(side="left", padx=10, pady=10)
-        customtkinter.CTkLabel(p_frame, text="PRO", font=("Segoe UI", 10, "bold"), text_color=C_BG_MAIN, fg_color=C_ACCENT, corner_radius=4).pack(side="right", padx=10)
+        customtkinter.CTkLabel(p_frame, text="Developer Account", font=("Segoe UI", 12, "bold"), text_color=C_ACCENT).pack(side="left", padx=10, pady=10)
 
         # Content Area
         self.content = customtkinter.CTkFrame(self.main_container, corner_radius=0, fg_color=C_BG_MAIN)
@@ -321,6 +319,17 @@ class App(customtkinter.CTk):
     def close_app(self):
         self.destroy()
         sys.exit()
+
+    def minimize_window(self):
+        self.withdraw()
+        self.overrideredirect(False)
+        self.iconify()
+        self.bind("<FocusIn>", self.restore_window)
+
+    def restore_window(self, event):
+        self.overrideredirect(True)
+        self.unbind("<FocusIn>")
+        self.lift()
 
     def add_menu_btn(self, text, icon, cmd, r):
         btn = customtkinter.CTkButton(
@@ -396,7 +405,13 @@ class App(customtkinter.CTk):
         c.pack(fill="both", expand=True, padx=40, pady=0)
         customtkinter.CTkLabel(c, text="MT2 MACRO", font=("Segoe UI", 40, "bold"), text_color=C_ACCENT).pack(pady=(60,10))
         customtkinter.CTkLabel(c, text="v4.1.0 Premium", font=("Consolas", 12), text_color=C_TEXT_DIM).pack()
-        customtkinter.CTkButton(c, text="GitHub", fg_color=C_SIDEBAR, hover_color="#222", command=lambda: webbrowser.open("https://github.com/guvenada")).pack(pady=40)
+        
+        # Links
+        btn_frame = customtkinter.CTkFrame(c, fg_color="transparent")
+        btn_frame.pack(pady=40)
+        
+        customtkinter.CTkButton(btn_frame, text="GitHub", fg_color=C_SIDEBAR, hover_color="#222", width=120, command=lambda: webbrowser.open("https://github.com/guvenada")).pack(side="left", padx=10)
+        customtkinter.CTkButton(btn_frame, text="LinkedIn", fg_color="#0077b5", hover_color="#006097", width=120, command=lambda: webbrowser.open("https://linkedin.com/in/guvenada")).pack(side="left", padx=10)
 
     def show_dashboard(self):
         self.f_set.pack_forget(); self.f_info.pack_forget()
