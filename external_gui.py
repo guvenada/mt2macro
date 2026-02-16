@@ -1,7 +1,7 @@
 """
-External System Monitor v2.0
-============================
-Educational use only.
+Harici Sistem İzleyici v2.0
+===========================
+Sadece eğitim amaçlıdır (Educational use only).
 """
 
 import sys
@@ -15,18 +15,18 @@ import os
 import ctypes
 from datetime import datetime
 
-# GUI Libs (may require pip install customtkinter)
+# GUI Kütüphaneleri (pip install customtkinter gerekebilir)
 import tkinter
 import customtkinter
 from PIL import Image, ImageTk
 
-# Core Libs
+# Çekirdek Kütüphaneler
 import cv2
 import numpy as np
 import mss
 
 # ============================================
-# SECURITY & UTILS (Obfuscation)
+# GÜVENLİK VE ARAÇLAR (Obfuscation)
 # ============================================
 
 def _junk_math():
@@ -39,7 +39,7 @@ class _ServiceWorker:
         self.mem.append(random.getrandbits(128))
 
 def set_random_title(app_root):
-    """Changes window title periodically."""
+    """Pencere başlığını belirli aralıklarla değiştirir."""
     titles = [
         "System Monitor", "Background Service", "Task Executor", 
         "Runtime Broker", "Service Host", "DirectX Diagnostics",
@@ -53,18 +53,17 @@ def set_random_title(app_root):
             else:
                 title = random.choice(titles)
             
-            # Update Tkinter title safely? No, must be main thread.
-            # Using ctypes instead to force change if possible or just rely on main thread update
+            # Tkinter başlığını güvenli şekilde güncellemek zor, ctypes kullanıyoruz
             ctypes.windll.kernel32.SetConsoleTitleW(title)
             
-            # Junk calcs
+            # Sahte işlemler (Junk calcs)
             _junk_math()
             time.sleep(random.uniform(5.0, 30.0))
         except:
             pass
 
 # ============================================
-# SYSTEM INPUT
+# SİSTEM GİRDİSİ (SYSTEM INPUT)
 # ============================================
 
 user32 = ctypes.windll.user32
@@ -85,13 +84,13 @@ def input_key(vk, scan, down=True):
 def click(x, y):
     SetCursorPos(int(x), int(y))
     time.sleep(0.08)
-    mouse_event(0x0008, 0, 0, 0, 0) # R Dn
+    mouse_event(0x0008, 0, 0, 0, 0) # Sağ Bas
     time.sleep(0.04)
-    mouse_event(0x0010, 0, 0, 0, 0) # R Up
+    mouse_event(0x0010, 0, 0, 0, 0) # Sağ Çek
     time.sleep(0.08)
-    mouse_event(0x0002, 0, 0, 0, 0) # L Dn
+    mouse_event(0x0002, 0, 0, 0, 0) # Sol Bas
     time.sleep(0.04)
-    mouse_event(0x0004, 0, 0, 0, 0) # L Up
+    mouse_event(0x0004, 0, 0, 0, 0) # Sol Çek
 
 def rotate_cam():
     input_key(VK_E, SCAN_E, True)
@@ -99,7 +98,7 @@ def rotate_cam():
     input_key(VK_E, SCAN_E, False)
 
 # ============================================
-# VISION ENGINE
+# GÖRÜNTÜ MOTORU (VISION ENGINE)
 # ============================================
 
 class VisionEngine:
@@ -111,13 +110,13 @@ class VisionEngine:
         self.monitor = self.sct.monitors[1]
         
     def load_assets(self):
-        # Load main
+        # Ana hedefi yükle
         if os.path.exists("target.png"):
             self.template_target = cv2.imread("target.png")
             if self.template_target is not None:
                 self.target_gray = cv2.cvtColor(self.template_target, cv2.COLOR_BGR2GRAY)
         
-        # Load bosses
+        # Yan hedefleri (elites) yükle
         self.boss_templates = []
         i = 1
         while os.path.exists(f"elite{i}.png"):
@@ -147,7 +146,7 @@ class VisionEngine:
         for pt in zip(*locs[::-1]):
             candidates.append((pt[0] + tw//2, pt[1] + th//2, res[pt[1], pt[0]]))
         
-        # Filter duplicates
+        # Çiftleri filtrele
         final = []
         for c in sorted(candidates, key=lambda x: -x[2]):
             if not any(abs(c[0]-f[0]) < 20 and abs(c[1]-f[1]) < 20 for f in final):
@@ -155,7 +154,7 @@ class VisionEngine:
         return final
 
 # ============================================
-# BOT WORKER THREAD
+# BOT İŞÇİ PARÇACIĞI (WORKER THREAD)
 # ============================================
 
 class WorkerThread(threading.Thread):
@@ -176,11 +175,11 @@ class WorkerThread(threading.Thread):
     def run(self):
         loaded, n_boss = self.vision.load_assets()
         if not loaded:
-            self.log("ERROR: No target.png found!")
-            self.status("Status: Error")
+            self.log("HATA: target.png bulunamadı! (ERROR)")
+            self.status("Durum: Hata (Error)")
             return
             
-        self.log(f"Assets Loaded: Target={loaded}, SubTargets={n_boss}")
+        self.log(f"Varlıklar Yüklendi: Hedef={loaded}, YanHedefler={n_boss}")
         
         sw = GetSystemMetrics(0)
         sh = GetSystemMetrics(1)
@@ -197,7 +196,7 @@ class WorkerThread(threading.Thread):
                 if frame is None: continue
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                 
-                # 1. BOSS CHECK
+                # 1. ELİT KONTROLÜ (BOSS CHECK)
                 boss_found = False
                 for _, _, b_gray in self.vision.boss_templates:
                     if self.vision.find_matches(gray, b_gray, 0.75):
@@ -205,13 +204,13 @@ class WorkerThread(threading.Thread):
                         break
                 
                 if boss_found:
-                    self.log(">> ELITE DETECTED -> Engaging")
-                    self.status("Status: Engaging Elite")
+                    self.log(">> ELİT TESPİT EDİLDİ -> Saldırılıyor")
+                    self.status("Durum: Elit Saldırısı")
                     input_key(VK_SPACE, SCAN_SPACE, True)
                     
                     waited = 0
                     no_boss = 0
-                    while waited < 300: # 5 min timeout
+                    while waited < 300: # 5 dk zaman aşımı
                         time.sleep(2)
                         waited += 2
                         
@@ -219,7 +218,7 @@ class WorkerThread(threading.Thread):
                             input_key(VK_SPACE, SCAN_SPACE, False)
                             break
                             
-                        # Re-scan
+                        # Tekrar tara (Re-scan)
                         f2 = self.vision.grab_screen()
                         if f2 is None: continue
                         g2 = cv2.cvtColor(f2, cv2.COLOR_BGR2GRAY)
@@ -231,42 +230,42 @@ class WorkerThread(threading.Thread):
                         else:
                             no_boss += 1
                             if no_boss >= 7:
-                                self.log(f">> Elite Cleared ({waited}s)")
+                                self.log(f">> Elit Temizlendi ({waited}s)")
                                 break
                     
                     input_key(VK_SPACE, SCAN_SPACE, False)
-                    self.status("Status: Searching")
+                    self.status("Durum: Aranıyor (Searching)")
                     continue
                 
-                # 2. TARGET CHECK
+                # 2. HEDEF KONTROLÜ (TARGET CHECK)
                 targets = self.vision.find_matches(gray, self.vision.target_gray, float(self.config.get('threshold', 0.55)))
                 
                 if targets:
-                    # Filter distance
+                    # Mesafe filtresi
                     valid = [t for t in targets if (t[0]-cx)**2 + (t[1]-cy)**2 > 80**2]
                     
                     if valid:
                         best = min(valid, key=lambda t: (t[0]-cx)**2 + (t[1]-cy)**2)
                         tx, ty = best[0], best[1] + offset
                         
-                        self.log(f"Target Found -> ({tx}, {ty})")
-                        self.status("Status: Action")
+                        self.log(f"Hedef Bulundu -> ({tx}, {ty})")
+                        self.status("Durum: İşlem (Action)")
                         click(tx, ty)
                         time.sleep(float(self.config.get('delay', 1.0)))
                     else:
                         rotate_cam()
                 else:
-                    self.status("Status: Scanning")
+                    self.status("Durum: Taranıyor (Scanning)")
                     rotate_cam()
                     
                 time.sleep(0.1)
                 
             except Exception as e:
-                self.log(f"Error: {e}")
+                self.log(f"Hata: {e}")
                 time.sleep(1)
 
 # ============================================
-# GUI CLASS (CustomTkinter)
+# ARAYÜZ SINIFI (GUI CLASS - CustomTkinter)
 # ============================================
 
 customtkinter.set_appearance_mode("Dark")
@@ -276,20 +275,20 @@ class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
         
-        # Security junk
+        # Güvenlik gereksiz kodları (Security junk)
         self._junk = _ServiceWorker()
         threading.Thread(target=set_random_title, args=(self,), daemon=True).start()
 
-        # Window Config
-        self.title("External System Monitor")
+        # Pencere Ayarları
+        self.title("Harici Sistem İzleyici")
         self.geometry("700x500")
         self.resizable(False, False)
         
-        # Layout
+        # Düzen (Layout)
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(0, weight=1)
         
-        # Sidebar
+        # Yan Menü (Sidebar)
         self.sidebar = customtkinter.CTkFrame(self, width=140, corner_radius=0)
         self.sidebar.grid(row=0, column=0, rowspan=4, sticky="nsew")
         self.sidebar.grid_rowconfigure(4, weight=1)
@@ -297,16 +296,16 @@ class App(customtkinter.CTk):
         self.logo_label = customtkinter.CTkLabel(self.sidebar, text="EXT TOOL", font=customtkinter.CTkFont(size=20, weight="bold"))
         self.logo_label.grid(row=0, column=0, padx=20, pady=(20, 10))
         
-        self.btn_dashboard = customtkinter.CTkButton(self.sidebar, text="Dashboard", command=self.show_dashboard)
+        self.btn_dashboard = customtkinter.CTkButton(self.sidebar, text="Panel (Dashboard)", command=self.show_dashboard)
         self.btn_dashboard.grid(row=1, column=0, padx=20, pady=10)
         
-        self.btn_settings = customtkinter.CTkButton(self.sidebar, text="Properties", command=self.show_settings)
+        self.btn_settings = customtkinter.CTkButton(self.sidebar, text="Ayarlar (Properties)", command=self.show_settings)
         self.btn_settings.grid(row=2, column=0, padx=20, pady=10)
         
-        self.status_label = customtkinter.CTkLabel(self.sidebar, text="Status: IDLE", text_color="gray")
+        self.status_label = customtkinter.CTkLabel(self.sidebar, text="Durum: BOŞTA", text_color="gray")
         self.status_label.grid(row=5, column=0, padx=20, pady=20)
 
-        # Content Areas
+        # İçerik Alanları
         self.frame_dash = customtkinter.CTkFrame(self, corner_radius=0, fg_color="transparent")
         self.frame_settings = customtkinter.CTkFrame(self, corner_radius=0, fg_color="transparent")
         
@@ -315,58 +314,58 @@ class App(customtkinter.CTk):
         
         self.show_dashboard()
         
-        # Worker Vars
+        # İşçi Değişkenleri (Worker Vars)
         self.log_queue = queue.Queue()
         self.worker = None
         self.is_running = False
         
-        # Start Log Polling
+        # Logları dinle
         self.after(100, self.update_logs)
 
     def setup_dashboard(self):
-        # Power Button
-        self.btn_power = customtkinter.CTkButton(self.frame_dash, text="START SERVICE", 
+        # Güç Düğmesi
+        self.btn_power = customtkinter.CTkButton(self.frame_dash, text="SERVİSİ BAŞLAT", 
                                                  font=customtkinter.CTkFont(size=16, weight="bold"),
                                                  height=50, fg_color="green", hover_color="darkgreen",
                                                  command=self.toggle_power)
         self.btn_power.pack(pady=20, padx=20, fill="x")
         
-        # Log Console
+        # Log Konsolu
         self.log_box = customtkinter.CTkTextbox(self.frame_dash, height=300)
         self.log_box.pack(pady=10, padx=20, fill="both", expand=True)
-        self.log_box.insert("0.0", ">> System Ready...\n")
+        self.log_box.insert("0.0", ">> Sistem Hazır...\n")
         self.log_box.configure(state="disabled")
         
-        # Capture Controls
+        # Yakalama Kontrolleri (Capture Controls)
         frame_caps = customtkinter.CTkFrame(self.frame_dash)
         frame_caps.pack(pady=10, padx=20, fill="x")
         
-        self.btn_cap_main = customtkinter.CTkButton(frame_caps, text="Capture Main", command=lambda: self.capture_asset("target"))
+        self.btn_cap_main = customtkinter.CTkButton(frame_caps, text="Ana Hedef Yakala", command=lambda: self.capture_asset("target"))
         self.btn_cap_main.pack(side="left", padx=5, expand=True)
         
-        self.btn_cap_sub = customtkinter.CTkButton(frame_caps, text="Capture Sub", command=lambda: self.capture_asset("elite", sub=True))
+        self.btn_cap_sub = customtkinter.CTkButton(frame_caps, text="Alt Hedef Yakala", command=lambda: self.capture_asset("elite", sub=True))
         self.btn_cap_sub.pack(side="right", padx=5, expand=True)
 
     def setup_settings(self):
-        lbl = customtkinter.CTkLabel(self.frame_settings, text="Configuration Properties", font=customtkinter.CTkFont(size=18))
+        lbl = customtkinter.CTkLabel(self.frame_settings, text="Yapılandırma Özellikleri", font=customtkinter.CTkFont(size=18))
         lbl.pack(pady=20)
         
-        # Threshold
-        self.lbl_th = customtkinter.CTkLabel(self.frame_settings, text="Match Threshold (0.1 - 1.0)")
+        # Eşik Değer (Threshold)
+        self.lbl_th = customtkinter.CTkLabel(self.frame_settings, text="Eşleşme Hassasiyeti (0.1 - 1.0)")
         self.lbl_th.pack()
         self.entry_th = customtkinter.CTkEntry(self.frame_settings)
         self.entry_th.insert(0, "0.55")
         self.entry_th.pack(pady=5)
         
-        # Offset
-        self.lbl_off = customtkinter.CTkLabel(self.frame_settings, text="Y-Axis Offset (px)")
+        # Ofset (Offset)
+        self.lbl_off = customtkinter.CTkLabel(self.frame_settings, text="Y-Ekseni Kaydırma (px)")
         self.lbl_off.pack()
         self.entry_off = customtkinter.CTkEntry(self.frame_settings)
         self.entry_off.insert(0, "80")
         self.entry_off.pack(pady=5)
         
-        # Delay
-        self.lbl_del = customtkinter.CTkLabel(self.frame_settings, text="Action Delay (sec)")
+        # Gecikme (Delay)
+        self.lbl_del = customtkinter.CTkLabel(self.frame_settings, text="İşlem Gecikmesi (sn)")
         self.lbl_del.pack()
         self.entry_del = customtkinter.CTkEntry(self.frame_settings)
         self.entry_del.insert(0, "1.0")
@@ -397,10 +396,10 @@ class App(customtkinter.CTk):
 
     def toggle_power(self):
         if not self.is_running:
-            # Start
+            # Başlat
             self.is_running = True
-            self.btn_power.configure(text="STOP SERVICE", fg_color="red", hover_color="darkred")
-            self.log_msg(">> Service Started")
+            self.btn_power.configure(text="SERVİSİ DURDUR", fg_color="red", hover_color="darkred")
+            self.log_msg(">> Servis Başlatıldı")
             
             cfg = {
                 'threshold': self.entry_th.get(),
@@ -413,18 +412,18 @@ class App(customtkinter.CTk):
             self.worker.paused = False
             self.worker.start()
         else:
-            # Stop
+            # Durdur
             self.is_running = False
-            self.btn_power.configure(text="START SERVICE", fg_color="green", hover_color="darkgreen")
-            self.log_msg(">> Service Stopped")
-            self.update_status("Status: IDLE")
+            self.btn_power.configure(text="SERVİSİ BAŞLAT", fg_color="green", hover_color="darkgreen")
+            self.log_msg(">> Servis Durduruldu")
+            self.update_status("Durum: BOŞTA")
             
             if self.worker:
                 self.worker.running = False
                 self.worker.paused = True
     
     def capture_asset(self, name, sub=False):
-        self.log_msg(f"Capturing {name} in 3 seconds...")
+        self.log_msg(f"'{name}' 3 saniye içinde yakalanıyor...")
         self.after(3000, lambda: self._do_capture(name, sub))
         
     def _do_capture(self, name, sub):
@@ -439,9 +438,9 @@ class App(customtkinter.CTk):
             fname = f"{name}{i}"
             
         cv2.imwrite(f"{fname}.png", img)
-        self.log_msg(f"Saved: {fname}.png")
+        self.log_msg(f"Kaydedildi: {fname}.png")
         
-        # Open paint
+        # Paint'i aç
         try:
             import subprocess
             subprocess.Popen(["mspaint", os.path.abspath(f"{fname}.png")])

@@ -1,7 +1,7 @@
 """
-External Automation Tool v1.0
-=============================
-Educational use only.
+Harici Otomasyon Aracı v1.0
+===========================
+Sadece eğitim amaçlıdır (Educational use only).
 """
 
 import cv2
@@ -16,22 +16,22 @@ import math
 from threading import Thread, Lock
 
 # ============================================
-# SECURITY & UTILS (Obfuscation)
+# GÜVENLİK VE ARAÇLAR (Obfuscation)
 # ============================================
 
 def _junk_math_operation(a, b):
-    # Basic math noise
+    # Rastgele matematik işlemi (code noise)
     return math.sqrt(a**2 + b**2) * math.sin(a)
 
 class _MemoryManager:
-    # Junk class for structure
+    # Yapısal karmaşıklık için boş sınıf
     def __init__(self):
         self.allocated = []
     def _allocate_dummy(self):
         self.allocated.append("0x" + "".join(random.choices("0123456789ABCDEF", k=8)))
 
 def set_random_title():
-    """Changes console title periodically to random system names."""
+    """Konsol başlığını sürekli değiştirir (Random system names)."""
     titles = [
         "Command Prompt", "Windows PowerShell", "System Service", 
         "Calculator", "Notepad", "Task Manager", "Explorer",
@@ -41,43 +41,43 @@ def set_random_title():
     
     while True:
         if random.random() < 0.3:
-            # Random hex string
+            # Rastgele hex dizisi
             title = "0x" + "".join(random.choices("0123456789ABCDEF", k=random.randint(8, 16)))
         else:
-            # System-like name
+            # Sistem benzeri isim
             title = random.choice(titles)
         
         ctypes.windll.kernel32.SetConsoleTitleW(title)
         
-        # Junk calculation
+        # Sahte işlem
         _junk_math_operation(random.randint(1, 100), random.randint(1, 100))
         
         time.sleep(random.uniform(2.0, 15.0))
 
 def check_security():
-    """Basic environment check."""
-    # Check for simple debuggers
+    """Basit ortam kontrolü (Basic environment check)."""
+    # Basit debugger kontrolü
     if ctypes.windll.kernel32.IsDebuggerPresent() != 0:
-        print("System Error: 0xC0000005") # Fake error
+        print("Sistem Hatası: 0xC0000005") # Sahte hata
         time.sleep(1)
         os._exit(0)
 
 # ============================================
-# CONFIGURATION
+# AYARLAR (CONFIGURATION)
 # ============================================
 
 CONFIG = {
-    'target_threshold': 0.55,
+    'target_threshold': 0.55, # Hassasiyet (0.1 - 1.0)
     'elite_threshold': 0.75,
-    'input_offset': 80,
-    'action_delay': 1.0, 
-    'elite_timeout': 300, 
-    'check_interval': 2, 
-    'stuck_limit': 3,     
+    'input_offset': 80,       # Tıklama kaydırma (px)
+    'action_delay': 1.0,      # İşlem gecikmesi
+    'elite_timeout': 300,     # Maksimum bekleme (300sn)
+    'check_interval': 2,      # Kontrol aralığı
+    'stuck_limit': 3,         # Takılma limiti
 }
 
 # ============================================
-# SYSTEM INTERFACE
+# SİSTEM ARAYÜZÜ (SYSTEM INTERFACE)
 # ============================================
 
 user32 = ctypes.windll.user32
@@ -112,7 +112,7 @@ def simulate_click(x, y):
     mouse_event(0x0004, 0, 0, 0, 0) 
 
 # ============================================
-# CAPTURE ENGINE
+# GÖRÜNTÜ YAKALAMA (CAPTURE ENGINE)
 # ============================================
 
 class CaptureStream:
@@ -120,7 +120,7 @@ class CaptureStream:
         self.frame = None
         self.lock = Lock()
         self.active = True
-        self._junk = _MemoryManager() # Junk usage
+        self._junk = _MemoryManager() # Junk kullanımı
         
     def start(self):
         Thread(target=self._stream, daemon=True).start()
@@ -136,7 +136,7 @@ class CaptureStream:
                     img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
                     with self.lock:
                         self.frame = img
-                    # Obfuscation: occasional dummy alloc within thread
+                    # Obfuscation: arada sırada sahte bellek işlemi
                     if random.random() < 0.01:
                         self._junk._allocate_dummy()
                 except:
@@ -158,7 +158,7 @@ def init_stream():
     stream.start()
 
 # ============================================
-# VISION CORE
+# GÖRÜNTÜ İŞLEME (VISION CORE)
 # ============================================
 
 def load_assets():
@@ -205,7 +205,7 @@ def get_nearest(points, center_x, center_y, min_dist=80):
     return min(valid, key=lambda p: (p[0]-center_x)**2 + (p[1]-center_y)**2)
 
 # ============================================
-# EXECUTION LOOP
+# YÜRÜTME DÖNGÜSÜ (EXECUTION LOOP)
 # ============================================
 
 def execute_logic(tgt_img, tgt_gray, elites, y_offset=80):
@@ -216,14 +216,14 @@ def execute_logic(tgt_img, tgt_gray, elites, y_offset=80):
     active = False
     
     print("\n" + "-"*50)
-    print("  STATUS: READY")
-    print("  Controls: F11 (Start) | F12 (Pause) | ESC (Exit)")
+    print("  DURUM: HAZIR (Status: READY)")
+    print("  Kontroller: F11 (Başlat) | F12 (Durdur) | ESC (Çıkış)")
     print("-"*50)
-    print("\nWaiting for signal...")
+    print("\nSinyal bekleniyor...")
     
-    check_security() # Run anti-debug check
+    check_security() # Anti-debug kontrolü
     
-    # Start Title Changer Thread
+    # Başlık Değiştiriciyi Başlat
     Thread(target=set_random_title, daemon=True).start()
     
     while True:
@@ -233,13 +233,13 @@ def execute_logic(tgt_img, tgt_gray, elites, y_offset=80):
         if GetAsyncKeyState(VK_F11) & 0x8000:
             if not active:
                 active = True
-                print("\n[>>] ACTIVE")
+                print("\n[>>] AKTİF (ACTIVE)")
             time.sleep(0.2)
         
         if GetAsyncKeyState(VK_F12) & 0x8000:
             if active:
                 active = False
-                print("\n[||] PAUSED")
+                print("\n[||] DURAKLATILDI (PAUSED)")
             time.sleep(0.2)
         
         if not active:
@@ -252,7 +252,7 @@ def execute_logic(tgt_img, tgt_gray, elites, y_offset=80):
             
             curr_gray = cv2.cvtColor(curr_frame, cv2.COLOR_BGR2GRAY)
             
-            # ELITE DETECTION
+            # ELİT TESPİTİ (ELITE DETECTION)
             elite_detected = False
             for _, _, e_gray in elites:
                 if scan_image(curr_gray, e_gray, CONFIG['elite_threshold']):
@@ -260,8 +260,8 @@ def execute_logic(tgt_img, tgt_gray, elites, y_offset=80):
                     break
             
             if elite_detected:
-                print(">> Elite Detected")
-                input_key(VK_SPACE, SCAN_SPACE, True) # Down
+                print(">> Elit Tespit Edildi (Elite Detected)")
+                input_key(VK_SPACE, SCAN_SPACE, True) # Tuşa bas
                 
                 timer = 0
                 no_target = 0
@@ -277,7 +277,7 @@ def execute_logic(tgt_img, tgt_gray, elites, y_offset=80):
                     if GetAsyncKeyState(VK_F12) & 0x8000:
                         input_key(VK_SPACE, SCAN_SPACE, False)
                         active = False
-                        print("\n[||] PAUSED")
+                        print("\n[||] DURAKLATILDI")
                         break
                         
                     f2 = stream.read()
@@ -290,17 +290,17 @@ def execute_logic(tgt_img, tgt_gray, elites, y_offset=80):
                         no_target += 1
                         if no_target >= 7:
                             input_key(VK_SPACE, SCAN_SPACE, False)
-                            print(f">> Cleared ({timer}s)")
+                            print(f">> Temizlendi ({timer}s)")
                             break
                     else:
                         no_target = 0
                 else:
                     input_key(VK_SPACE, SCAN_SPACE, False)
-                    print(">> Timeout")
+                    print(">> Zaman Aşımı (Timeout)")
                 
                 continue
             
-            # STANDARD TARGET
+            # STANDART HEDEF (STANDARD TARGET)
             targets = scan_image(curr_gray, tgt_gray, CONFIG['target_threshold'])
             
             if targets:
@@ -318,42 +318,42 @@ def execute_logic(tgt_img, tgt_gray, elites, y_offset=80):
             pass
 
 # ============================================
-# HELPERS
+# YARDIMCILAR (HELPERS)
 # ============================================
 
 def capture_template(fname):
-    print(f"\nCapturing '{fname}' in 3s...")
+    print(f"\n'{fname}' 3 saniye içinde yakalanıyor...")
     time.sleep(3)
     with mss.mss() as sct:
         raw = np.array(sct.grab(sct.monitors[1]))
         img = cv2.cvtColor(raw, cv2.COLOR_BGRA2BGR)
     cv2.imwrite(f"{fname}.png", img)
-    print(f"Saved {fname}.png")
+    print(f"Kaydedildi: {fname}.png")
 
 def main():
-    # Fake error to confuse simple analysis
+    # Basit analizi şaşırtmak için sahte kontrol
     if len(os.listdir('.')) > 10000:
         _junk_math_operation(1, 1)
 
-    print("\nExternal Automation Tool v1.2")
+    print("\nHarici Otomasyon Aracı v1.2")
     
     tgt_img, tgt_gray, elites = load_assets()
     
-    print(f"Stats: Target={'YES' if tgt_img is not None else 'NO'}, SubTargets={len(elites)}")
-    print("\n[1] Setup Main Target")
-    print("[2] Setup Sub Target")
-    print("[3] Execute")
+    print(f"Durum: Hedef={'VAR' if tgt_img is not None else 'YOK'}, AltHedefler={len(elites)}")
+    print("\n[1] Ana Hedefi Ayarla (Setup Main)")
+    print("[2] Alt Hedef Ayarla (Setup Sub)")
+    print("[3] Başlat (Execute)")
     
-    opt = input("\nOption: ").strip()
+    opt = input("\nSeçim: ").strip()
     
     if opt == '1':
         capture_template("target")
-        input("Crop 'target.png' and press Enter...")
+        input("'target.png' dosyasını kırpın ve Enter'a basın...")
         return main()
     
     if opt == '2':
         capture_template(f"elite{len(elites)+1}")
-        input(f"Crop 'elite{len(elites)+1}.png' and press Enter...")
+        input(f"'elite{len(elites)+1}.png' dosyasını kırpın ve Enter'a basın...")
         return main()
     
     if opt == '3':
