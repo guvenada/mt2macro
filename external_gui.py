@@ -161,14 +161,16 @@ class SplashScreen(customtkinter.CTkToplevel):
         self.geometry("400x250")
         self.overrideredirect(True)
         self.attributes('-topmost', True)
-        self.attributes('-alpha', 0.0) # Start invisible for fade-in
+        self.attributes('-alpha', 0.0)
+        self.wm_attributes("-transparentcolor", "#000001")
+        self.configure(fg_color="#000001")
         
         sw, sh = self.winfo_screenwidth(), self.winfo_screenheight()
         self.geometry(f"+{(sw-400)//2}+{(sh-250)//2}")
         
         # RGB Border Frame
         self.rgb_hue = 0.0
-        self.border_frame = customtkinter.CTkFrame(self, bg_color="black", corner_radius=20, border_width=3)
+        self.border_frame = customtkinter.CTkFrame(self, bg_color="#000001", corner_radius=20, border_width=3)
         self.border_frame.pack(fill="both", expand=True)
         
         # Inner Content
