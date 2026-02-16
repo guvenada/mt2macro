@@ -162,15 +162,15 @@ class SplashScreen(customtkinter.CTkToplevel):
         self.overrideredirect(True)
         self.attributes('-topmost', True)
         self.attributes('-alpha', 0.0)
-        self.wm_attributes("-transparentcolor", "#000001")
-        self.configure(fg_color="#000001")
+        self.wm_attributes("-transparentcolor", "#FF00FF")
+        self.configure(fg_color="#FF00FF")
         
         sw, sh = self.winfo_screenwidth(), self.winfo_screenheight()
         self.geometry(f"+{(sw-400)//2}+{(sh-250)//2}")
         
         # RGB Border Frame
         self.rgb_hue = 0.0
-        self.border_frame = customtkinter.CTkFrame(self, bg_color="#000001", corner_radius=20, border_width=3)
+        self.border_frame = customtkinter.CTkFrame(self, bg_color="#FF00FF", corner_radius=20, border_width=3)
         self.border_frame.pack(fill="both", expand=True)
         
         # Inner Content
@@ -463,5 +463,4 @@ class App(customtkinter.CTk):
 
 if __name__ == "__main__":
     app = App()
-    app.after(100, app.set_app_window) # Ensure taskbar icon appears
     app.mainloop()
